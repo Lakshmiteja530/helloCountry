@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="255f15f8-8d63-4cbe-9ca7-5c5d97c16b51" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="d767fdc3-a4f0-4be2-b5c5-113f88039d71" >
+		<http:request-connection host="https://gorest.co.in" />
+	</http:request-config>
+	<flow name="helloCountryFlow" doc:id="b4a89c05-2a10-430b-a39f-fce9b230c0e3" >
+		<http:listener doc:name="Listener" doc:id="cd8194fa-9254-4769-97da-e6c0695ac785" config-ref="HTTP_Listener_config" path="/test"/>
+		<http:request method="GET" doc:name="outBound call to goRest" doc:id="3ca9d517-58a4-4117-9702-8d2de96815c2" config-ref="HTTP_Request_configuration" path="/public/v2/users">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"per-page" : 100,
+	"page" : 1
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="map data to employeeDetails" doc:id="791ac0c2-3191-4a1c-8317-4e9513ea64bb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map((value,index)->{
+	
+	employeeName:value.name,
+	employeeId:value.id,
+	employeeGender:value.gender,
+	employeeEmail:value.email,
+	employeeStatus:value.status
+	
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="payload size" doc:id="1b819253-2b30-4b77-b32b-bf21dc854af5" message="#[sizeOf(payload)]"/>
+	</flow>
+</mule>
